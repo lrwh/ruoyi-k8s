@@ -12,5 +12,5 @@
 ## 功能调整
 
 - 采用k8s、istio方式部署若依系统
-- 并加上了 APM 链路追踪 agent
+- 并通过 sidecar 方式添加 APM 链路追踪 agent
 - 移除了 nacos ，采用 configmap 方式
