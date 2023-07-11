@@ -1,0 +1,15 @@
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: ruoyi-gateway
+  profiles:
+    # 环境配置
+    active: dev
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+datakit:
+  socket:
+    host: 120.26.217.214
+    port: 9542

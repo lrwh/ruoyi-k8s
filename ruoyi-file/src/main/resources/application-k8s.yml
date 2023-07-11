@@ -1,0 +1,27 @@
+# Tomcat
+server:
+  port: 80
+k8s:
+  namespace: ruoyi-k8s
+  podName: ${spring.application.name}
+
+#选择文件服务器
+fileService: MinioSysFileService
+file:
+  domain: http://127.0.0.1:9300
+  path: D:/ruoyi/uploadPath
+  prefix: /statics
+
+# FastDFS配置
+fdfs:
+  domain: http://8.129.231.12
+  soTimeout: 3000
+  connectTimeout: 2000
+  trackerList: 8.129.231.12:22122
+
+# Minio配置
+minio:
+  url: http://minio.k8s.jinbaidigits.com
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: k8s-ruoyi

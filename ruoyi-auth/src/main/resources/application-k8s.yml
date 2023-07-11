@@ -1,0 +1,39 @@
+# Tomcat
+server:
+  port: 80
+spring:
+  redis:
+    host: 8.136.207.182
+    port: 6379
+    password: Solution#008
+    database: 4
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude: com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+# feign 配置
+feign:
+  sentinel:
+    enabled: true
+  okhttp:
+    enabled: true
+  httpclient:
+    enabled: false
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 10000
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+k8s:
+  namespace: ruoyi-k8s
+  podName: ${spring.application.name}

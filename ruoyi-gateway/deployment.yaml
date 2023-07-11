@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: __appname__
+  namespace: __namespace__
+spec:
+  selector:
+    app: __appname__-pod
+  ports:
+    - protocol: TCP
+      port: __containerport__
+      targetPort: __containerport__
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: __appname__-deployment
+  namespace: __namespace__
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: __appname__-pod
+  template:
+    metadata:
+      labels:
+        app: __appname__-pod
+    spec:
+      nodeName: k8s-node2
+      containers:
+        - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAME_SPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: DD_AGENT_HOST
+              value: $(HOST_IP)
+            - name: SPRING_BOOT_PROFILE
+              value: "k8sProd"
+            - name: DATAKIT_SOCKET_PORT
+              value: "9541"
+            - name: JAVA_OPTS
+              value: |-
+                -javaagent:/usr/dd-java-agent/agent/dd-java-agent.jar -Ddd.service=k8sruoyi-gateway  -Ddd.tags=container_host:$(POD_NAME) -Ddd.service.mapping=redis:redisk8s -Ddd.env=$(SPRING_BOOT_PROFILE) -Ddd.agent.port=9529
+            - name: PARAMS
+              value: "--spring.profiles.active=$(SPRING_BOOT_PROFILE) --datakit.socket.host=$(DD_AGENT_HOST) --datakit.socket.port=$(DATAKIT_SOCKET_PORT) --k8s.namespace=$(NAME_SPACE) --k8s.podName=$(POD_NAME)"
+          name: __appname__-container
+          image: __imagename__
+          ports:
+            - containerPort: __containerport__
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/dd-java-agent/agent
+              name: ddagent
+            - name: application-yaml
+              mountPath: /data/app/config/application-k8sProd.yaml
+              subPath: application-k8sProd.yaml
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 256Mi
+      initContainers:
+        - command:
+            - sh
+            - -c
+            - set -ex;mkdir -p /ddtrace/agent;cp -r /usr/dd-java-agent/agent/* /ddtrace/agent;
+          image: pubrepo.jiagouyun.com/datakit/dk-sidecar:1.0
+          imagePullPolicy: Always
+          name: ddtrace-agent-sidecar
+          volumeMounts:
+            - mountPath: /ddtrace/agent
+              name: ddagent
+      imagePullSecrets:
+        - name: harbor-regsecret
+      restartPolicy: Always
+      volumes:
+        - emptyDir: {}
+          name: ddagent
+        - name: application-yaml
+          configMap:
+            name: ruoyi-application
+            items:
+              - key: k8s-gateway-application.yaml
+                path: application-k8sProd.yaml

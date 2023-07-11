@@ -1,0 +1,25 @@
+include:
+  - project: 'gitlab-devops/gitlabci-templates'
+    ref: master
+    file: 'templates/k8s-java-pipeline.yml'
+
+
+variables:
+  BUILD_SHELL: 'mvn clean package  -DskipTests  --settings=./settings.xml'
+  CACHE_DIR: 'target/'
+
+  #构建镜像
+  CI_REGISTRY: '172.16.0.238'
+  CI_REGISTRY_USER: 'admin'
+  CI_REGISTRY_PASSWD: 'DatakitHar32123'
+  IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_ID"
+  DOCKER_FILE_PATH: "./Dockerfile"
+
+  #部署k8s
+  RUN_DEPLOY: "no"
+  NAMESPACE: "prod"
+  APP_NAME: "$CI_PROJECT_NAME"
+  CONTAINER_PORT: 8080
+  NODE_PORT: 30100
+
+

@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-gateway
+  namespace: ruoyi-k8s
+  labels:
+    app: ruoyi-gateway
+spec:
+  selector:
+    app: ruoyi-gateway
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 31101
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-gateway
+  namespace: ruoyi-k8s
+  labels:
+    app: ruoyi-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-gateway
+  template:
+    metadata:
+      labels:
+        app: ruoyi-gateway
+    spec:
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAME_SPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: SPRING_BOOT_PROFILE
+          value: "k8sProd"
+        - name: DATAKIT_SOCKET_PORT
+          value: "9541"
+        - name: OTLP_PORT
+          value: "4317"
+        - name: JAVA_OPTS
+          value: |-
+            -javaagent:/usr/opentelemetry-javaagent/opentelemetry-javaagent.jar -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.endpoint=http://$(DD_AGENT_HOST):$(OTLP_PORT) -Dotel.resource.attributes=container_host=$(POD_NAME),service.name=k8sruoyi-otel-gateway
+        - name: PARAMS
+          value: "--spring.profiles.active=$(SPRING_BOOT_PROFILE) --datakit.socket.host=$(DD_AGENT_HOST) --datakit.socket.port=$(DATAKIT_SOCKET_PORT) --k8s.namespace=$(NAME_SPACE) --k8s.podName=$(POD_NAME)"
+        name: ruoyi-gateway
+        image: registry.cn-shenzhen.aliyuncs.com/lr_715377484/ruoyi_gateway_k8s:v1
+        imagePullPolicy: Always
+        ports:
+          - containerPort:  80
+            protocol: TCP
+        volumeMounts:
+          - mountPath: /usr/opentelemetry-javaagent
+            name: trace-agent
+          - name: application-yaml
+            mountPath: /data/app/config/application-k8sProd.yaml
+            subPath: application-k8sProd.yaml
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            memory: 256Mi
+      initContainers:
+        - command:
+            - sh
+            - -c
+            - set -ex;mkdir -p /usr/opentelemetry-javaagent;cp -r /data/opentelemetry-javaagent/* /usr/opentelemetry-javaagent;
+          image: registry.cn-shenzhen.aliyuncs.com/lr_715377484/opentelemetry-javaagent-sidecar:1.9.1
+          imagePullPolicy: Always
+          name: opentelemetry-javaagent-sidecar
+          volumeMounts:
+            - mountPath: /usr/opentelemetry-javaagent
+              name: trace-agent
+      restartPolicy: Always
+      volumes:
+        - emptyDir: {}
+          name: trace-agent
+        - name: application-yaml
+          configMap:
+            name: ruoyi-application
+            items:
+              - key: k8s-gateway-application.yaml
+                path: application-k8sProd.yaml

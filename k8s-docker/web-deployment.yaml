@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  namespace: ruoyi-k8s
+  labels:
+    app: web-service
+spec:
+  selector:
+    app: web-service
+  ports:
+    - protocol: TCP
+      port: 80
+      nodePort: 31000
+      targetPort: 80
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-service
+  namespace: ruoyi-k8s
+  labels:
+    app: web-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-service
+  template:
+    metadata:
+      labels:
+        app: web-service
+    spec:
+     # nodeName: master
+      containers:
+      - env:
+        - name: PODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        name: web-service
+        image: registry.cn-shenzhen.aliyuncs.com/lr_715377484/ruoyi_web_k8s:v1
+        imagePullPolicy: Always
+        #imagePullPolicy: IfNotPresent
+        #command: ["sh","-c"]
+        ports:
+        - containerPort: 80
+          protocol: TCP
+      #imagePullSecrets:
+      #- name: regcred
+
+

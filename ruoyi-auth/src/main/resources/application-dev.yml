@@ -1,0 +1,12 @@
+# Tomcat
+server:
+  port: 9200
+spring:
+  redis:
+    host: 8.136.207.182
+    port: 6379
+    password: Solution#008
+    database: 4
+# 本地开发需要配置
+service:
+  system: localhost:9201

@@ -1,0 +1,12 @@
+# Spring
+spring: 
+  application:
+    # 应用名称
+    name: ruoyi-gen
+  profiles:
+    # 环境配置
+    active: dev
+datakit:
+  socket:
+    host: 120.26.217.214
+    port: 9542

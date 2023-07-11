@@ -1,0 +1,313 @@
+---
+apiVersion: v1
+data:
+  k8s-auth-application.yaml: |-
+    # Tomcat
+    server:
+      port: 80
+    spring:
+      redis:
+        host: 8.136.207.182
+        port: 6379
+        password: Solution#008
+        database: 4
+      main:
+        allow-circular-references: true
+        allow-bean-definition-overriding: true
+      autoconfigure:
+        exclude: com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+      mvc:
+        pathmatch:
+          matching-strategy: ant_path_matcher
+
+    # feign 配置
+    feign:
+      sentinel:
+        enabled: true
+      okhttp:
+        enabled: true
+      httpclient:
+        enabled: false
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 10000
+      compression:
+        request:
+          enabled: true
+        response:
+          enabled: true
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+    logging:
+      config: /data/app/config/logback-spring.xml
+  k8s-file-application.yaml: |-
+    # Tomcat
+    server:
+      port: 80
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+
+    #选择文件服务器
+    fileService: MinioSysFileService
+    file:
+      domain: http://127.0.0.1:9300
+      path: D:/ruoyi/uploadPath
+      prefix: /statics
+
+    # FastDFS配置
+    fdfs:
+      domain: http://8.129.231.12
+      soTimeout: 3000
+      connectTimeout: 2000
+      trackerList: 8.129.231.12:22122
+
+    # Minio配置
+    minio:
+      url: http://minio.k8s.jinbaidigits.com
+      accessKey: minioadmin
+      secretKey: Ai7H@YKLry
+      bucketName: k8s-ruoyi
+    logging:
+      config: /data/app/config/logback-spring.xml
+  k8s-gateway-application.yaml: |-
+    server:
+      port: 8080
+    spring:
+      redis:
+        host: 8.136.207.182
+        port: 6379
+        password: Solution#008
+        database: 4
+      cloud:
+        gateway:
+          discovery:
+            locator:
+              lowerCaseServiceId: true
+              enabled: true
+          routes:
+            # 认证中心
+            - id: ruoyi-auth
+              uri: http://ruoyi-auth.${k8s.namespace}
+              predicates:
+                - Path=/auth/**
+              filters:
+                # 验证码处理
+                - CacheRequestFilter
+                - ValidateCodeFilter
+                - StripPrefix=1
+            # 代码生成
+            - id: ruoyi-gen
+              uri: http://ruoyi-gen.${k8s.namespace}
+              predicates:
+                - Path=/code/**
+              filters:
+                - StripPrefix=1
+            # 定时任务
+            - id: ruoyi-job
+              uri: http://ruoyi-job.${k8s.namespace}
+              predicates:
+                - Path=/schedule/**
+              filters:
+                - StripPrefix=1
+            # 系统模块
+            - id: ruoyi-system
+              uri: http://ruoyi-system.${k8s.namespace}
+              predicates:
+                - Path=/system/**
+              filters:
+                - StripPrefix=1
+            # 文件服务
+            - id: ruoyi-file
+              uri: http://ruoyi-file.${k8s.namespace}
+              predicates:
+                - Path=/file/**
+              filters:
+                - StripPrefix=1
+
+    security:
+      # 验证码
+      captcha:
+        enabled: true
+        type: math
+      # 防止XSS攻击
+      xss:
+        enabled: true
+        excludeUrls:
+          - /system/notice
+      # 不校验白名单
+      ignore:
+        whites:
+          - /auth/logout
+          - /auth/login
+          - /auth/register
+          - /*/v2/api-docs
+          - /csrf
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+    logging:
+      config: /data/app/config/logback-spring.xml
+  k8s-gen-application.yaml: |-
+    server:
+      port: 80
+    spring:
+      redis:
+        host: 8.136.207.182
+        port: 6379
+        password: Solution#008
+        database: 4
+      db:
+        ip: 8.136.207.182
+      datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://${spring.db.ip}:3306/ry-2022?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: root
+        password: Solution&*73
+    # mybatis配置
+    mybatis:
+      # 搜索指定包别名
+      typeAliasesPackage: com.ruoyi.gen.domain
+      # 配置mapper的扫描，找到所有的mapper.xml映射文件
+      mapperLocations: classpath:mapper/**/*.xml
+
+    # swagger配置
+    swagger:
+      title: 代码生成接口文档
+      license: Powered By ruoyi
+      licenseUrl: https://ruoyi.vip
+
+    # 代码生成
+    gen:
+      # 作者
+      author: admin
+      # 默认生成包路径 system 需改成自己的模块名称 如 system monitor tool
+      packageName: com.ruoyi.system
+      # 自动去除表前缀，默认是false
+      autoRemovePre: false
+      # 表前缀（生成类名不会包含表前缀，多个用逗号分隔）
+      tablePrefix: sys_
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+    logging:
+      config: /data/app/config/logback-spring.xml
+  k8s-job-application.yaml: |-
+    server:
+      port: 80
+    spring:
+      redis:
+        host: 8.136.207.182
+        port: 6379
+        password: Solution#008
+        database: 4
+      db:
+        ip: 8.136.207.182
+      datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://${spring.db.ip}:3306/ry-2022?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: root
+        password: Solution&*73
+
+    # mybatis配置
+    mybatis:
+      # 搜索指定包别名
+      typeAliasesPackage: com.ruoyi.job.domain
+      # 配置mapper的扫描，找到所有的mapper.xml映射文件
+      mapperLocations: classpath:mapper/**/*.xml
+
+    # swagger配置
+    swagger:
+      title: 定时任务接口文档
+      license: Powered By ruoyi
+      licenseUrl: https://ruoyi.vip
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+    logging:
+      config: /data/app/config/logback-spring.xml
+  k8s-system-application.yaml: |-
+    server:
+      port: 80
+    spring:
+      redis:
+        host: 8.136.207.182
+        port: 6379
+        password: Solution#008
+        database: 4
+      db:
+        ip: 8.136.207.182
+      datasource:
+        dynamic:
+          datasource:
+            master:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: jdbc:mysql://${spring.db.ip}:3306/ry-2022?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+              username: root
+              password: Solution&*73
+    k8s:
+      namespace: ruoyi-k8s
+      podName: ${spring.application.name}
+    logging:
+      config: /data/app/config/logback-spring.xml
+  ddtrace-param: -Ddd.agent.port=9529 -Ddd.profiling.enabled=true -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:FlightRecorderOptions=stackdepth=256
+  logback-spring.xml: |- 
+      <?xml version="1.0" encoding="UTF-8"?>
+        <configuration scan="true" scanPeriod="30 seconds">
+        <!-- 部分参数需要来源于properties文件 -->
+        <springProperty scope="context" name="logName" source="spring.application.name" defaultValue="localhost.log"/>
+        <!-- 配置后可以动态修改日志级别-->
+        <jmxConfigurator />
+        <property name="log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} - [%method,%line] %X{dd.service} %X{dd.trace_id} %X{dd.span_id} - %msg%n" />
+
+        <!-- %m输出的信息,%p日志级别,%t线程名,%d日期,%c类的全名,,,, -->
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${log.pattern}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/${logName}/${logName}.log</file>    <!-- 使用方法 -->
+            <append>true</append>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/${logName}/${logName}-%d{yyyy-MM-dd}.log.%i</fileNamePattern>
+                <maxFileSize>64MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${log.pattern}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- 系统模块日志级别控制  -->
+        <logger name="com.ruoyi" level="info" />
+        <!-- 只打印error级别的内容 -->
+        <logger name="com.netflix" level="ERROR" />
+        <logger name="net.sf.json" level="ERROR" />
+        <logger name="org.springframework" level="ERROR" />
+        <logger name="springfox" level="ERROR" />
+
+        <!-- sql 打印 配置-->
+        <logger name="com.github.pagehelper.mapper" level="INFO" />
+        <logger name="org.apache.ibatis" level="INFO" />
+
+        <root level="info">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="FILE" />
+        </root>
+      </configuration>
+
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels: {}
+  name: ruoyi-application
+  namespace: ruoyi-k8s
+  resourceVersion: '3667084'
