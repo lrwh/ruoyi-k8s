@@ -69,6 +69,9 @@ spec:
           - name: application-yaml
             mountPath: /data/app/config/application-k8sProd.yaml
             subPath: application-k8sProd.yaml
+          - name: application-yaml
+            mountPath: /data/app/config/logback-spring.xml
+            subPath: logback-spring.xml
         resources:
           limits:
             memory: 512Mi
@@ -95,3 +98,6 @@ spec:
             items:
               - key: k8s-gen-application.yaml
                 path: application-k8sProd.yaml
+              - key: logback-spring.xml
+                path: logback-spring.xml
+

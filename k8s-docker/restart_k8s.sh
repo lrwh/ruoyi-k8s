@@ -6,7 +6,7 @@ apiModule='auth gateway system file gen job web'
 kubectl label ns ruoyi-k8s istio-injection-
 
 # 发布web服务，防止不同环境 rum不一致，导致链路无法关联
-sh deploy_docker.sh web
+#sh deploy_docker.sh web
 
 # 重启服务
 restart(){

@@ -41,8 +41,8 @@ spec:
               fieldPath: metadata.name
         name: web-service
         image: registry.cn-shenzhen.aliyuncs.com/lr_715377484/ruoyi_web_k8s:v1
-        imagePullPolicy: Always
-        #imagePullPolicy: IfNotPresent
+        #imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         #command: ["sh","-c"]
         ports:
         - containerPort: 80

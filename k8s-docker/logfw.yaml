@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logfwd-conf
+  namespace: ruoyi-k8s
+data:
+  config: |
+    [
+        {
+
+            "loggings": [
+                {
+                    "logfiles": ["/data/app/logs/ruoyi-system/ruoyi-system.log"],
+                    "source": "ruoyi-system",
+                    "pipeline": "demo_system.p",
+                    "tags": {}
+                }
+            ]
+        }
+    ]
